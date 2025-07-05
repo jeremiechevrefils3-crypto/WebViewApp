@@ -1,0 +1,25 @@
+format_version: '11'
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+
+workflows:
+  primary:
+    steps:
+      - git-clone@6: {}
+      - xcode-archive@4:
+          inputs:
+            project_path: WebViewApp/WebViewApp.xcodeproj
+            scheme: WebViewApp
+            export_method: development
+            compile_bitcode: "no"
+            force_code_sign_identity: ""
+            force_provisioning_profile_specifier: ""
+            team_id: ""
+            export_options_plist_content: |-
+              {
+                "method": "development",
+                "signingStyle": "manual",
+                "compileBitcode": false,
+                "provisioningProfiles": {},
+                "stripSwiftSymbols": true
+              }
+      - deploy-to-bitrise-io@2: {}
