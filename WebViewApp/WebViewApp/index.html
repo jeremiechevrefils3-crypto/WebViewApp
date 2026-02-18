@@ -2,213 +2,244 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>WebView App</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PolyFree - Full Management</title>
+    <script src="https://js.puter.com/v2/"></script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        :root { --bg: #0b0b0e; --card: #16161d; --acc: #a855f7; --txt: #f3f4f6; --action-txt: #88889b; --input-bg: #252530; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--txt); margin: 0; overflow: hidden; }
         
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            height: 100vh;
-            overflow-x: hidden;
-            -webkit-user-select: none;
-            user-select: none;
-        }
+        #top-nav { display: flex; background: var(--card); border-bottom: 1px solid #2d2d3a; position: sticky; top: 0; z-index: 100; }
+        .nav-tab { flex: 1; padding: 15px; text-align: center; cursor: pointer; font-weight: bold; color: #666; }
+        .nav-tab.active { color: var(--acc); border-bottom: 3px solid var(--acc); }
+
+        .view-container { height: calc(100vh - 51px); overflow-y: auto; padding: 25px; box-sizing: border-box; }
+        #hub-view, #persona-view { display: none; }
+        #hub-view.active, #persona-view.active { display: block; }
+
+        /* GRID AND CARDS */
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; }
+        .char-card { background: var(--card); border: 1px solid #2d2d3a; border-radius: 12px; padding: 15px; cursor: pointer; position: relative; transition: 0.2s; }
+        .char-card:hover { border-color: var(--acc); }
         
-        .container {
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            padding: 20px;
-            text-align: center;
+        /* DELETE AI BUTTON */
+        .del-ai { 
+            position: absolute; top: 8px; right: 8px; width: 24px; height: 24px; 
+            background: rgba(255, 77, 77, 0.1); color: #ff4d4d; border-radius: 6px; 
+            border: 1px solid rgba(255, 77, 77, 0.2); font-size: 16px; cursor: pointer; 
+            display: flex; align-items: center; justify-content: center; transition: 0.2s;
         }
+        .del-ai:hover { background: #ff4d4d; color: white; }
+
+        #chat-view { height: 100vh; display: none; flex-direction: column; background: #0d0d12; position: fixed; inset: 0; z-index: 200; }
+        #chat-header { padding: 15px; background: var(--card); border-bottom: 1px solid #2d2d3a; display: flex; align-items: center; justify-content: space-between; }
+        #messages { flex-grow: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; padding-bottom: 100px; }
         
-        .header {
-            margin-bottom: 40px;
-        }
+        /* MESSAGES */
+        .msg-wrapper { display: flex; flex-direction: column; position: relative; max-width: 80%; }
+        .msg-wrapper.user { align-self: flex-end; }
+        .msg-wrapper.ai { align-self: flex-start; }
+        .msg { padding: 12px 18px; border-radius: 20px; font-size: 15px; position: relative; }
+        .user .msg { background: #3b82f6; border-bottom-right-radius: 4px; }
+        .ai .msg { background: #23232e; border: 1px solid #333; border-bottom-left-radius: 4px; }
         
-        .header h1 {
-            font-size: 2.5rem;
-            font-weight: 300;
-            margin-bottom: 10px;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
-        }
-        
-        .header p {
-            font-size: 1.1rem;
-            opacity: 0.9;
-        }
-        
-        .controls {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-            width: 100%;
-            max-width: 400px;
-        }
-        
-        .button {
-            background: rgba(255, 255, 255, 0.2);
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            color: white;
-            padding: 15px 25px;
-            border-radius: 25px;
-            font-size: 1.1rem;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-        }
-        
-        .button:hover, .button:active {
-            background: rgba(255, 255, 255, 0.3);
-            border-color: rgba(255, 255, 255, 0.5);
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-        }
-        
-        .file-input {
-            display: none;
-        }
-        
-        .file-button {
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .notification-section {
-            margin-top: 30px;
-            padding: 20px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 15px;
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            width: 100%;
-            max-width: 400px;
-        }
-        
-        .notification-section h3 {
-            margin-bottom: 15px;
-            font-size: 1.3rem;
-            font-weight: 400;
-        }
-        
-        .input-group {
-            margin-bottom: 15px;
-            text-align: left;
-        }
-        
-        .input-group label {
-            display: block;
-            margin-bottom: 5px;
-            font-size: 0.9rem;
-            opacity: 0.9;
-        }
-        
-        .input-group input, .input-group textarea {
-            width: 100%;
-            padding: 12px;
-            border: none;
-            border-radius: 10px;
-            background: rgba(255, 255, 255, 0.9);
-            color: #333;
-            font-size: 1rem;
-        }
-        
-        .input-group textarea {
-            resize: vertical;
-            min-height: 80px;
-        }
-        
-        .preview {
-            margin-top: 20px;
-            padding: 15px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 10px;
-            text-align: left;
-            display: none;
-        }
-        
-        .preview img, .preview video {
-            max-width: 100%;
-            max-height: 200px;
-            border-radius: 8px;
-            margin-top: 10px;
-        }
-        
-        @media (max-width: 480px) {
-            .header h1 {
-                font-size: 2rem;
-            }
-            
-            .controls {
-                max-width: 100%;
-            }
-            
-            .notification-section {
-                max-width: 100%;
-            }
-        }
+        .del-msg { position: absolute; top: -5px; right: -5px; width: 18px; height: 18px; background: #ff4d4d; color: white; border-radius: 50%; border: none; font-size: 10px; cursor: pointer; display: none; }
+        .msg-wrapper:hover .del-msg { display: block; }
+
+        .action { color: var(--action-txt); font-style: italic; }                
+        #bottom-bar { position: fixed; bottom: 0; left: 0; right: 0; padding: 20px; background: linear-gradient(transparent, var(--bg) 50%); }
+        #input-pill { max-width: 700px; margin: 0 auto; background: var(--input-bg); border-radius: 35px; display: flex; align-items: center; padding: 5px 15px; border: 1px solid #3f3f46; }
+        textarea, input { width: 100%; background: #252530; border: 1px solid #3f3f46; color: white; padding: 10px; border-radius: 8px; outline: none; box-sizing: border-box; }
+        #sendBtn { background: var(--acc); color: white; border: none; width: 35px; height: 35px; border-radius: 50%; cursor: pointer; margin-left: 10px; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>WebView App</h1>
-            <p>Full-screen WebView with native features</p>
-        </div>
-        
-        <div class="controls">
-            <label for="camera-input" class="button file-button">
-                📷 Take Photo / Video
-                <input type="file" id="camera-input" class="file-input" accept="image/*,video/*" capture="environment">
-            </label>
-            
-            <label for="gallery-input" class="button file-button">
-                🖼️ Choose from Gallery
-                <input type="file" id="gallery-input" class="file-input" accept="image/*,video/*" multiple>
-            </label>
-            
-            <button class="button" onclick="testNotification()">
-                🔔 Test Instant Notification
-            </button>
-        </div>
-        
-        <div class="notification-section">
-            <h3>Schedule Notification</h3>
-            <div class="input-group">
-                <label for="notif-title">Title:</label>
-                <input type="text" id="notif-title" placeholder="Enter notification title" value="WebView App">
-            </div>
-            <div class="input-group">
-                <label for="notif-message">Message:</label>
-                <textarea id="notif-message" placeholder="Enter notification message">Hello from WebView App!</textarea>
-            </div>
-            <div class="input-group">
-                <label for="notif-delay">Delay (seconds, 0 for instant):</label>
-                <input type="number" id="notif-delay" placeholder="0" value="5" min="0">
-            </div>
-            <button class="button" onclick="scheduleNotification()">
-                ⏰ Schedule Notification
-            </button>
-        </div>
-        
-        <div id="preview" class="preview">
-            <strong>Selected file:</strong>
-            <div id="preview-content"></div>
+
+<div id="top-nav">
+    <div class="nav-tab active" onclick="switchView('hub')">PUBLIC HUB</div>
+    <div class="nav-tab" onclick="switchView('persona')">PERSONA</div>
+</div>
+
+<div id="hub-view" class="view-container active">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+        <h2>Characters</h2>
+        <button onclick="document.getElementById('create-modal').style.display='flex'" style="background:var(--acc); color:white; border:none; padding:8px 15px; border-radius:15px; cursor:pointer;">+ Create AI</button>
+    </div>
+    <div class="grid" id="bot-grid"></div>
+</div>
+
+<div id="persona-view" class="view-container">
+    <div style="max-width:500px; margin:0 auto; background:var(--card); padding:20px; border-radius:15px;">
+        <h3>Your Identity</h3>
+        <input type="text" id="pName" onchange="savePersona()" placeholder="Name">
+        <input type="number" id="pAge" onchange="savePersona()" placeholder="Age" style="margin-top:10px;">
+        <textarea id="pDesc" rows="5" onchange="savePersona()" style="margin-top:10px;" placeholder="Bio..."></textarea>
+    </div>
+</div>
+
+<div id="chat-view">
+    <div id="chat-header">
+        <button onclick="closeChat()" style="background:none; border:none; color:var(--acc); font-size:18px; cursor:pointer;">← Back</button>
+        <b id="chat-name"></b>
+        <button onclick="clearChat()" style="color:#ff4d4d; background:none; border:none; cursor:pointer;">Clear History</button>
+    </div>
+    <div id="messages"></div>
+    <div id="bottom-bar">
+        <div id="input-pill">
+            <textarea id="userInput" rows="1" placeholder="Type a message..."></textarea>
+            <button id="sendBtn">➤</button>
         </div>
     </div>
-    
-    <script src="app.js"></script>
+</div>
+
+<div id="create-modal" style="position:fixed; inset:0; background:rgba(0,0,0,0.8); display:none; align-items:center; justify-content:center; z-index:1000;">
+    <div style="background:var(--card); padding:20px; border-radius:15px; width:350px;">
+        <h3>Create AI</h3>
+        <input type="text" id="newBotName" placeholder="Name">
+        <textarea id="newBotSys" rows="4" placeholder="AI Persona / Instructions" style="margin-top:10px;"></textarea>
+        <button onclick="createAI()" style="width:100%; background:var(--acc); color:white; border:none; padding:10px; border-radius:10px; margin-top:15px; cursor:pointer;">Publish</button>
+        <button onclick="document.getElementById('create-modal').style.display='none'" style="width:100%; background:none; color:#555; border:none; cursor:pointer;">Cancel</button>
+    </div>
+</div>
+
+<script>
+    const API_KEY = "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";
+    let activeIdx = null;
+    let history = [];
+
+    let bots = JSON.parse(localStorage.getItem('pb_bots')) || [{name:"Emma-Mom", sys:"You are Emma. Use *actions*."}];
+    let persona = JSON.parse(localStorage.getItem('pb_persona')) || {name: "User", age: 18, desc: ""};
+
+    function init() {
+        document.getElementById('pName').value = persona.name;
+        document.getElementById('pAge').value = persona.age;
+        document.getElementById('pDesc').value = persona.desc;
+        renderBots();
+    }
+
+    function switchView(v) {
+        document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.view-container').forEach(c => c.classList.remove('active'));
+        event.target.classList.add('active');
+        document.getElementById(v + '-view').classList.add('active');
+    }
+
+    function savePersona() {
+        persona = { name: document.getElementById('pName').value, age: document.getElementById('pAge').value, desc: document.getElementById('pDesc').value };
+        localStorage.setItem('pb_persona', JSON.stringify(persona));
+    }
+
+    function renderBots() {
+        const grid = document.getElementById('bot-grid');
+        grid.innerHTML = '';
+        bots.forEach((b, i) => {
+            const card = document.createElement('div');
+            card.className = 'char-card';
+            card.onclick = () => openChat(i);
+            card.innerHTML = `
+                <button class="del-ai" onclick="deleteAI(${i}); event.stopPropagation();">×</button>
+                <h3 style="margin:0; color:var(--acc);">${b.name}</h3>
+            `;
+            grid.appendChild(card);
+        });
+    }
+
+    function createAI() {
+        const n = document.getElementById('newBotName').value;
+        const s = document.getElementById('newBotSys').value;
+        if(!n || !s) return;
+        bots.push({name: n, sys: s});
+        localStorage.setItem('pb_bots', JSON.stringify(bots));
+        document.getElementById('create-modal').style.display = 'none';
+        renderBots();
+    }
+
+    function deleteAI(index) {
+        if(!confirm("Delete this AI and all its chats?")) return;
+        bots.splice(index, 1);
+        localStorage.setItem('pb_bots', JSON.stringify(bots));
+        localStorage.removeItem(`pb_hist_${index}`);
+        renderBots();
+    }
+
+    function openChat(i) {
+        activeIdx = i;
+        history = JSON.parse(localStorage.getItem(`pb_hist_${i}`)) || [];
+        document.getElementById('chat-view').style.display = 'flex';
+        document.getElementById('chat-name').innerText = bots[i].name;
+        renderMessages();
+    }
+
+    function renderMessages() {
+        const msgBox = document.getElementById('messages');
+        msgBox.innerHTML = '';
+        history.forEach((m, index) => {
+            const wrapper = document.createElement('div');
+            wrapper.className = `msg-wrapper ${m.role === 'user' ? 'user' : 'ai'}`;
+            wrapper.innerHTML = `
+                <button class="del-msg" onclick="deleteSingleMsg(${index})">×</button>
+                <div class="msg">${format(m.content)}</div>
+            `;
+            msgBox.appendChild(wrapper);
+        });
+        msgBox.scrollTop = msgBox.scrollHeight;
+    }
+
+    function deleteSingleMsg(index) {
+        history.splice(index, 1);
+        localStorage.setItem(`pb_hist_${activeIdx}`, JSON.stringify(history));
+        renderMessages();
+    }
+
+    function closeChat() { document.getElementById('chat-view').style.display = 'none'; }
+    function format(t) { return t.replace(/\*(.*?)\*/g, '<span class="action">*$1*</span>'); }
+
+    async function stream(text) {
+        const bot = bots[activeIdx];
+        const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+            method: "POST",
+            headers: { "Authorization": `Bearer ${API_KEY}`, "Content-Type": "application/json" },
+            body: JSON.stringify({
+                model: "google/gemini-2.0-flash-lite-001",
+                messages: [{role: "system", content: `${bot.sys} | User: ${persona.name}, ${persona.age}. ${persona.desc}`}, ...history, {role: "user", content: text}],
+                stream: true
+            })
+        });
+
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        let aiText = "";
+
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            const chunks = decoder.decode(value).split("\n");
+            for (const chunk of chunks) {
+                if (chunk.startsWith("data: ")) {
+                    const data = chunk.replace("data: ", "");
+                    if (data === "[DONE]") break;
+                    try {
+                        const content = JSON.parse(data).choices[0].delta.content;
+                        if (content) { aiText += content; }
+                    } catch(e){}
+                }
+            }
+        }
+        history.push({role: "user", content: text}, {role: "assistant", content: aiText});
+        localStorage.setItem(`pb_hist_${activeIdx}`, JSON.stringify(history));
+        renderMessages();
+    }
+
+    document.getElementById('sendBtn').onclick = () => {
+        const val = document.getElementById('userInput').value; if(!val) return;
+        document.getElementById('userInput').value = '';
+        history.push({role: "user", content: val});
+        renderMessages();
+        stream(val);
+    };
+
+    function clearChat() { history=[]; localStorage.removeItem(`pb_hist_${activeIdx}`); renderMessages(); }
+    init();
+</script>
 </body>
 </html>
-
