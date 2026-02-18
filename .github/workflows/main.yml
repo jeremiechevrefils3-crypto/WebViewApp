@@ -1,0 +1,20 @@
+name: Build IPA
+on: [push, workflow_dispatch]
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build
+        run: |
+          xcodebuild -project WebViewApp/WebViewApp.xcodeproj \
+          -scheme WebViewApp -sdk iphoneos -configuration Release \
+          CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO
+          mkdir Payload
+          cp -R build/Release-iphoneos/WebViewApp.app Payload/
+          zip -r MyGame.ipa Payload
+      - name: Upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: Fixed-App
+          path: MyGame.ipa
