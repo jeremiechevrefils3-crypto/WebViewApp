@@ -1,20 +1,34 @@
-name: Build IPA
+name: Build Fixed IPA
 on: [push, workflow_dispatch]
 jobs:
   build:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Build
+      - name: Locate and Build Project
         run: |
-          xcodebuild -project WebViewApp/WebViewApp.xcodeproj \
-          -scheme WebViewApp -sdk iphoneos -configuration Release \
-          CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO
-          mkdir Payload
-          cp -R build/Release-iphoneos/WebViewApp.app Payload/
+          # 1. Automatically find your project file
+          PROJ_PATH=$(find . -name "*.xcodeproj" -depth 2 | head -n 1)
+          PROJ_NAME=$(basename "$PROJ_PATH" .xcodeproj)
+          
+          echo "Found project: $PROJ_NAME at $PROJ_PATH"
+          
+          # 2. Run the build without needing a paid developer account
+          xcodebuild build -project "$PROJ_PATH" \
+          -scheme "$PROJ_NAME" \
+          -sdk iphoneos \
+          -configuration Release \
+          CODE_SIGNING_ALLOWED=NO \
+          CODE_SIGNING_REQUIRED=NO \
+          -derivedDataPath build_output
+          
+          # 3. Manually create the Payload folder (fixing your original error)
+          mkdir -p Payload
+          cp -R build_output/Build/Products/Release-iphoneos/*.app Payload/
           zip -r MyGame.ipa Payload
-      - name: Upload
+          
+      - name: Save the IPA
         uses: actions/upload-artifact@v4
         with:
-          name: Fixed-App
+          name: App-Ready-To-Install
           path: MyGame.ipa
