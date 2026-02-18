@@ -5,30 +5,27 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Locate and Build Project
+      - name: Build
         run: |
-          # 1. Automatically find your project file
-          PROJ_PATH=$(find . -name "*.xcodeproj" -depth 2 | head -n 1)
+          # 1. Find the project wherever it is hiding
+          PROJ_PATH=$(find . -name "*.xcodeproj" | head -n 1)
           PROJ_NAME=$(basename "$PROJ_PATH" .xcodeproj)
           
-          echo "Found project: $PROJ_NAME at $PROJ_PATH"
-          
-          # 2. Run the build without needing a paid developer account
+          echo "Found project: $PROJ_NAME"
+
+          # 2. Build it for free (skipping Apple's paid checks)
           xcodebuild build -project "$PROJ_PATH" \
-          -scheme "$PROJ_NAME" \
-          -sdk iphoneos \
-          -configuration Release \
-          CODE_SIGNING_ALLOWED=NO \
-          CODE_SIGNING_REQUIRED=NO \
+          -scheme "$PROJ_NAME" -sdk iphoneos -configuration Release \
+          CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO \
           -derivedDataPath build_output
-          
-          # 3. Manually create the Payload folder (fixing your original error)
+
+          # 3. Create the Payload folder (This stops the "Payload" error on your phone)
           mkdir -p Payload
           cp -R build_output/Build/Products/Release-iphoneos/*.app Payload/
           zip -r MyGame.ipa Payload
           
-      - name: Save the IPA
+      - name: Upload
         uses: actions/upload-artifact@v4
         with:
-          name: App-Ready-To-Install
+          name: Fixed-App-IPA
           path: MyGame.ipa
